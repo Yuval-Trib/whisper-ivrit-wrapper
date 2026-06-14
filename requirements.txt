@@ -1,2 +1,6 @@
 faster-whisper
 runpod
+pyannote.audio
+torch
+blue-onnx
+soundfile
