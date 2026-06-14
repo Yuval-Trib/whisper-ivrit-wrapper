@@ -18,7 +18,7 @@ class STTShort(BaseHandler):
         self._model: WhisperModel | None = None
 
     def load_model(self) -> None:
-        model_id = os.environ.get("MODEL_SIZE", "ivrit-ai/whisper-large-v3-turbo")
+        model_id = os.environ.get("MODEL_SIZE", "ivrit-ai/whisper-large-v3-turbo-ct2")
         device = os.environ.get("DEVICE", "cuda")
         compute_type = os.environ.get("COMPUTE_TYPE", "int8_float16")
         logger.info({"event": "model_loading", "model": model_id, "device": device, "mode": "stt_short"})

@@ -3,6 +3,7 @@ import logging
 import os
 import tempfile
 
+import soundfile as sf
 import torch
 from faster_whisper import WhisperModel
 from pyannote.audio import Pipeline
@@ -21,15 +22,17 @@ class STTLong(BaseHandler):
         self._diarizer: Pipeline | None = None
 
     def load_model(self) -> None:
-        model_id = os.environ.get("MODEL_SIZE", "ivrit-ai/whisper-large-v3-turbo")
+        model_id = os.environ.get("MODEL_SIZE", "ivrit-ai/whisper-large-v3-turbo-ct2")
         device = os.environ.get("DEVICE", "cuda")
         compute_type = os.environ.get("COMPUTE_TYPE", "int8_float16")
         logger.info({"event": "model_loading", "model": model_id, "device": device, "mode": "stt_long"})
         self._model = WhisperModel(model_id, device=device, compute_type=compute_type)
 
+        hf_token = os.environ.get("HF_TOKEN") or None
         logger.info({"event": "diarizer_loading"})
         self._diarizer = Pipeline.from_pretrained(
             "ivrit-ai/pyannote-speaker-diarization-3.1",
+            token=hf_token,
         )
         self._diarizer.to(torch.device(device))
         logger.info({"event": "model_ready", "model": model_id})
@@ -68,7 +71,15 @@ class STTLong(BaseHandler):
             )
             segments = list(segments)
 
-            diarization = self._diarizer(tmp_path, num_speakers=num_speakers)
+            audio_data, sample_rate = sf.read(tmp_path)
+            if audio_data.ndim == 1:
+                waveform = torch.from_numpy(audio_data).unsqueeze(0).float()
+            else:
+                waveform = torch.from_numpy(audio_data.T).float()
+            diarization = self._diarizer(
+                {"waveform": waveform, "sample_rate": sample_rate},
+                num_speakers=num_speakers,
+            )
         finally:
             os.unlink(tmp_path)
 
@@ -86,9 +97,11 @@ class STTLong(BaseHandler):
                 speaker_map[speaker_id] = chr(ord("A") + len(speaker_map))
             return speaker_map[speaker_id]
 
+        annotation = getattr(diarization, "speaker_diarization", diarization)
+
         def find_speaker(start: float, end: float) -> str:
             mid = (start + end) / 2
-            for turn, _, speaker_id in diarization.itertracks(yield_label=True):
+            for turn, _, speaker_id in annotation.itertracks(yield_label=True):
                 if turn.start <= mid <= turn.end:
                     return label(speaker_id)
             return "UNKNOWN"

@@ -1,3 +1,9 @@
+# Test inputs (generated, contain large base64 audio)
+tests/test_*.json
+tests/output.wav
+tests/raw_output.txt
+test_input.json
+
 # Local reference
 Commands.md
 CLAUDE.md
