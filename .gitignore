@@ -1,6 +1,7 @@
-# Test inputs (generated, contain large base64 audio)
+# Test inputs and responses (generated, contain large base64 audio)
 tests/test_*.json
-tests/output.wav
+tests/responses/*
+!tests/responses/.gitkeep
 tests/raw_output.txt
 test_input.json
 

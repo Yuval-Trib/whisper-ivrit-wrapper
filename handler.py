@@ -33,7 +33,7 @@ def handler(job: dict) -> dict:
     t0 = time.monotonic()
 
     try:
-        result = _endpoint.handle(job.get("input", {}))
+        result = _endpoint.dispatch(job.get("input", {}))
         logger.info({
             "event": "request_ok",
             "request_id": request_id,
