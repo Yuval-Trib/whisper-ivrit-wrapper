@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04
 
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
@@ -8,6 +8,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.12 \
+    python3.12-venv \
     python3-pip \
     ffmpeg \
     git \
@@ -16,6 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN python3.12 -m pip install --no-cache-dir --break-system-packages onnxruntime-gpu
 RUN python3.12 -m pip install --no-cache-dir --break-system-packages -r requirements.txt
+RUN python3.12 -m pip install --no-cache-dir --break-system-packages --force-reinstall \
+    --index-url https://download.pytorch.org/whl/cu128 \
+    torch torchaudio
 
 COPY . .
 

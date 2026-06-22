@@ -44,13 +44,14 @@ class STTShort(BaseHandler):
         language = job_input.get("language", "he")
         initial_prompt = job_input.get("initial_prompt") or None
 
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        _shm = "/dev/shm" if os.path.isdir("/dev/shm") else None
+        with tempfile.NamedTemporaryFile(dir=_shm, suffix=".mp3") as tmp:
             tmp.write(audio_bytes)
-            tmp_path = tmp.name
-
-        try:
+            tmp.flush()
+            audio_bytes = bytes(len(audio_bytes))
+            del audio_bytes
             segments, info = self._model.transcribe(
-                tmp_path,
+                tmp.name,
                 language=language,
                 initial_prompt=initial_prompt,
                 beam_size=1,
@@ -62,5 +63,3 @@ class STTShort(BaseHandler):
                 "language": info.language,
                 "duration": round(info.duration, 2),
             }
-        finally:
-            os.unlink(tmp_path)

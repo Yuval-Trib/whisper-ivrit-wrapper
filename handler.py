@@ -1,3 +1,5 @@
+import ctypes
+import ctypes.util
 import importlib
 import logging
 import os
@@ -7,6 +9,11 @@ import uuid
 import runpod
 
 from app.logging_config import configure_logging
+
+_libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
+MCL_CURRENT, MCL_FUTURE = 1, 2
+if _libc.mlockall(MCL_CURRENT | MCL_FUTURE) != 0:
+    logging.getLogger(__name__).warning("mlockall failed (errno %d) - swap protection unavailable", ctypes.get_errno())
 
 configure_logging()
 logger = logging.getLogger(__name__)

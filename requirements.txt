@@ -1,7 +1,6 @@
 faster-whisper
 runpod
 pyannote.audio
-torch
 soundfile
 renikud-onnx @ git+https://github.com/thewh1teagle/renikud-v5.git#subdirectory=renikud-onnx
 blue-onnx @ git+https://github.com/maxmelichov/BlueTTS.git

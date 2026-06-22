@@ -57,13 +57,15 @@ class STTLong(BaseHandler):
         initial_prompt = job_input.get("initial_prompt") or None
         num_speakers = job_input.get("num_speakers", 2)
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        _shm = "/dev/shm" if os.path.isdir("/dev/shm") else None
+        with tempfile.NamedTemporaryFile(dir=_shm, suffix=".mp3") as tmp:
             tmp.write(audio_bytes)
-            tmp_path = tmp.name
+            tmp.flush()
+            audio_bytes = bytes(len(audio_bytes))
+            del audio_bytes
 
-        try:
             segments, info = self._model.transcribe(
-                tmp_path,
+                tmp.name,
                 language=language,
                 initial_prompt=initial_prompt,
                 beam_size=5,
@@ -71,17 +73,16 @@ class STTLong(BaseHandler):
             )
             segments = list(segments)
 
-            audio_data, sample_rate = sf.read(tmp_path)
-            if audio_data.ndim == 1:
-                waveform = torch.from_numpy(audio_data).unsqueeze(0).float()
-            else:
-                waveform = torch.from_numpy(audio_data.T).float()
-            diarization = self._diarizer(
-                {"waveform": waveform, "sample_rate": sample_rate},
-                num_speakers=num_speakers,
-            )
-        finally:
-            os.unlink(tmp_path)
+            audio_data, sample_rate = sf.read(tmp.name)
+
+        if audio_data.ndim == 1:
+            waveform = torch.from_numpy(audio_data).unsqueeze(0).float()
+        else:
+            waveform = torch.from_numpy(audio_data.T).float()
+        diarization = self._diarizer(
+            {"waveform": waveform, "sample_rate": sample_rate},
+            num_speakers=num_speakers,
+        )
 
         return {
             "segments": self._merge(segments, diarization),

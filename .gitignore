@@ -5,6 +5,9 @@ tests/responses/*
 tests/raw_output.txt
 test_input.json
 
+# Local config (API keys, endpoint IDs)
+tests/endpoints.local
+
 # Local reference
 Commands.md
 CLAUDE.md
